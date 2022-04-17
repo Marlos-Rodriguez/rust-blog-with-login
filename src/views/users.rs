@@ -62,8 +62,6 @@ pub async fn login(
 
             let user = &x[0];
 
-            println!("{}", body.password);
-
             match user.validate_password(&password_item) {
                 true => {
                     let jwt = user.create_token(secret_key);
