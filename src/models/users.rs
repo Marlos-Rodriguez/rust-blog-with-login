@@ -1,6 +1,7 @@
 use super::super::schema::users;
 
-use chrono::NaiveDateTime;
+use chrono::{Duration, NaiveDateTime, Utc};
+use jsonwebtoken::{encode, EncodingKey, Header};
 use pwhash::bcrypt;
 use uuid::Uuid;
 
@@ -38,6 +39,25 @@ pub struct NewUserHandler {
     pub is_admin: bool,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct NewLoginHandler {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct LoginResponse {
+    pub jwt: String,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+struct Claims {
+    id: String,
+    iat: i64,
+    exp: i64,
+    email: String,
+}
+
 impl User {
     pub fn validate_password(&self, password: &String) -> bool {
         return bcrypt::verify(password, self.password.as_str());
@@ -47,9 +67,30 @@ impl User {
         return bcrypt::hash(password).unwrap();
     }
 
+    pub fn create_token(&self, secret: &EncodingKey) -> String {
+        let iat_token = Utc::now().timestamp();
+        let exp_token = Utc::now()
+            .checked_add_signed(Duration::minutes(60))
+            .expect("Invalid timestamp")
+            .timestamp();
+
+        let new_claims = Claims {
+            id: self.id.to_string(),
+            iat: iat_token,
+            exp: exp_token,
+            email: self.email.to_string(),
+        };
+        let token = match encode(&Header::default(), &new_claims, &secret) {
+            Ok(t) => t,
+            Err(e) => panic!("Error encoding the token: {}", e),
+        };
+
+        return token;
+    }
+
     pub fn create_user<'a>(
         conn: &PgConnection,
-        user: &mut NewUserHandler,
+        user: NewUserHandler,
     ) -> Result<User, diesel::result::Error> {
         let password_hash = User::hash_password(&user.password);
         let id: String = Uuid::new_v4().to_string();
