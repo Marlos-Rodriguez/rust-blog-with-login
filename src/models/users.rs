@@ -45,17 +45,12 @@ pub struct NewLoginHandler {
     pub password: String,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct LoginResponse {
-    pub jwt: String,
-}
-
 #[derive(Deserialize, Serialize, Debug)]
-struct Claims {
-    id: String,
-    iat: i64,
-    exp: i64,
-    email: String,
+pub struct Claims {
+    pub id: String,
+    pub iat: i64,
+    pub exp: i64,
+    pub email: String,
 }
 
 impl User {

@@ -3,9 +3,8 @@ use diesel::prelude::*;
 
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-use jsonwebtoken::EncodingKey;
-
 use super::super::models::users::*;
+use super::super::views::{LoginResponse, SecretKey};
 use super::super::DbPool;
 
 #[get("/")]
@@ -37,14 +36,14 @@ pub async fn register(pool: web::Data<DbPool>, body: web::Json<NewUserHandler>) 
 #[post("/login")]
 pub async fn login(
     pool: web::Data<DbPool>,
-    key: web::Data<EncodingKey>,
+    key: web::Data<SecretKey>,
     body: web::Json<NewLoginHandler>,
 ) -> impl Responder {
     let conn = pool.get().expect("Could no get DB connection");
 
     let username_item = body.username.clone();
     let password_item = body.password.clone();
-    let secret_key = key.as_ref();
+    let secret_key = &key.enc_key;
 
     let results = web::block(move || {
         users
@@ -64,13 +63,13 @@ pub async fn login(
 
             match user.validate_password(&password_item) {
                 true => {
-                    let jwt = user.create_token(secret_key);
+                    let jwt = user.create_token(&secret_key);
                     let jwt_response = LoginResponse { jwt: jwt };
                     HttpResponse::Ok().json(jwt_response)
                 }
                 false => {
                     println!("Bad password");
-                    HttpResponse::NotFound().finish()
+                    HttpResponse::BadRequest().finish()
                 }
             }
         }
