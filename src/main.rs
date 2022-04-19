@@ -24,7 +24,7 @@ use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 //Views
-use views::posts::get_posts;
+use views::posts::{create_post, get_posts};
 use views::users::{get_users, login, register};
 use views::SecretKey;
 
@@ -61,7 +61,7 @@ async fn main() -> std::io::Result<()> {
                     .service(register)
                     .service(login),
             )
-            .service(web::scope("/posts").service(get_posts))
+            .service(web::scope("/posts").service(get_posts).service(create_post))
     })
     .bind("127.0.0.1:8080")?
     .run()

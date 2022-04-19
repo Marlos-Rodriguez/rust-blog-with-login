@@ -4,7 +4,7 @@ use diesel::prelude::*;
 use actix_web::{get, post, web, HttpResponse, Responder};
 
 use super::super::models::users::*;
-use super::super::views::{LoginResponse, SecretKey};
+use super::super::views::{ErrorResponse, LoginResponse, SecretKey};
 use super::super::DbPool;
 
 #[get("/")]
@@ -15,7 +15,13 @@ pub async fn get_users(pool: web::Data<DbPool>) -> impl Responder {
 
     match results {
         Ok(x) => HttpResponse::Ok().json(x),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => {
+            let new_error = ErrorResponse {
+                error: "Error in get the users".to_string(),
+                description: e.to_string(),
+            };
+            HttpResponse::InternalServerError().json(new_error)
+        }
     }
 }
 
@@ -29,7 +35,13 @@ pub async fn register(pool: web::Data<DbPool>, body: web::Json<NewUserHandler>) 
 
     match results {
         Ok(x) => HttpResponse::Ok().json(x),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => {
+            let new_error = ErrorResponse {
+                error: "Error creating user".to_string(),
+                description: e.to_string(),
+            };
+            HttpResponse::InternalServerError().json(new_error)
+        }
     }
 }
 
@@ -56,7 +68,11 @@ pub async fn login(
     let response = match results {
         Ok(x) => {
             if x.len() == 0 {
-                return HttpResponse::NotFound().finish();
+                let new_error = ErrorResponse {
+                    error: "User not found".to_string(),
+                    description: "User not found in database, check username".to_string(),
+                };
+                return HttpResponse::InternalServerError().json(new_error);
             }
 
             let user = &x[0];
@@ -68,12 +84,22 @@ pub async fn login(
                     HttpResponse::Ok().json(jwt_response)
                 }
                 false => {
-                    println!("Bad password");
-                    HttpResponse::BadRequest().finish()
+                    let new_error = ErrorResponse {
+                        error: "Password or username not match".to_string(),
+                        description: "Password or username not match, check username or password"
+                            .to_string(),
+                    };
+                    HttpResponse::BadRequest().json(new_error)
                 }
             }
         }
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => {
+            let new_error = ErrorResponse {
+                error: "Error in DB".to_string(),
+                description: e.to_string(),
+            };
+            HttpResponse::InternalServerError().json(new_error)
+        }
     };
     return response;
 }

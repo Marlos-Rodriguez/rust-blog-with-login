@@ -17,6 +17,6 @@ pub struct LoginResponse {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ErrorResponse {
-    pub name: String,
+    pub error: String,
     pub description: String,
 }
