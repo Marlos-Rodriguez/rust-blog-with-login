@@ -19,7 +19,7 @@ use diesel::r2d2::{self, ConnectionManager};
 use jsonwebtoken::{DecodingKey, EncodingKey};
 
 use actix_web::middleware::Logger;
-use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpServer};
 
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
@@ -28,17 +28,14 @@ use views::posts::{create_post, get_posts};
 use views::users::{get_users, login, register};
 use views::SecretKey;
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     //ENV
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("Database URL is required");
     let jwt_secret = env::var("JWT_SECRET").expect("JWT Secret is required");
+    let host = env::var("HOST").expect("HOST must be setted");
+    let port = env::var("PORT").expect("PORT must be setted");
 
     let keys = SecretKey {
         enc_key: EncodingKey::from_secret(jwt_secret.as_ref()),
@@ -49,6 +46,8 @@ async fn main() -> std::io::Result<()> {
     let pool = Pool::builder()
         .build(connection)
         .expect("Error in create pool");
+
+    println!("Hola");
 
     HttpServer::new(move || {
         App::new()
@@ -63,7 +62,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::scope("/posts").service(get_posts).service(create_post))
     })
-    .bind("127.0.0.1:8080")?
+    .bind(format!("{}:{}", host, port))?
     .run()
     .await
 }
