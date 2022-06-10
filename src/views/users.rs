@@ -25,7 +25,7 @@ pub async fn get_users(pool: web::Data<DbPool>) -> impl Responder {
     }
 }
 
-#[post("/register")]
+#[post("/")]
 pub async fn register(pool: web::Data<DbPool>, body: web::Json<NewUserHandler>) -> impl Responder {
     let conn = pool.get().expect("Could no get DB connection");
 

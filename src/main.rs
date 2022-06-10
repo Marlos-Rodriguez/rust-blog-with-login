@@ -47,8 +47,6 @@ async fn main() -> std::io::Result<()> {
         .build(connection)
         .expect("Error in create pool");
 
-    println!("Hola");
-
     HttpServer::new(move || {
         App::new()
             .data(pool.clone())

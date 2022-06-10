@@ -62,7 +62,7 @@ pub async fn get_posts(
     };
 }
 
-#[post("/create")]
+#[post("/")]
 pub async fn create_post(
     pool: web::Data<DbPool>,
     key: web::Data<SecretKey>,
