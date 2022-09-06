@@ -14,4 +14,6 @@ WORKDIR /app
 
 COPY --from=0 /app/target/release/rust_api /app
 
+EXPOSE 8080
+
 CMD ./rust_api
